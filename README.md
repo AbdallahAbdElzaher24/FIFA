@@ -1,170 +1,86 @@
-# ⚽ Unified Football Scouting System
+<h1 align="center">⚽ FIFA Player Market Value — Prediction & Classification</h1>
 
-A unified machine learning system that predicts a football player's **market value** and classifies their **performance tier**, using a suite of regression and classification models bundled together inside a single class (`UnifiedFootball`).
+<p align="center">
+An end-to-end ML project that predicts a FIFA player's <b>market value</b> and classifies their <b>performance tier</b> using regression, classification, and ensemble learning.
+</p>
 
----
-
-## 📌 Overview
-
-The project is built around one main class: **`UnifiedFootball`**, which contains:
-
-1. **Input Pipeline** (`InputPipeline`): prepares raw data for prediction.
-2. **Regression models**: predict a player's market value in millions of dollars (M$).
-3. **Classification models**: classify a player into a performance tier (`low`, `mid`, `high`, `elite`).
-4. **Evaluation tools (Stats)**: compare the performance of all models against each other using metrics and charts.
+<p align="center">
+<img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white">
+<img src="https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white">
+<img src="https://img.shields.io/badge/XGBoost-2C3E50?style=for-the-badge">
+<img src="https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white">
+</p>
 
 ---
 
-## 🗂️ Class Structure
+## 🎯 What This Project Does
 
-```
-UnifiedFootball
-├── InputPipeline           (Nested) — feature preprocessing
-├── RegressionStats         (Nested) — evaluates regression models
-├── ClassificationStats     (Nested) — evaluates classification models
-├── predict_value()         — predicts market value
-├── predict_tier()          — predicts performance tier
-├── predict()               — unified prediction (value + tier)
-├── predict_raw()           — predicts directly from a raw DataFrame
-├── evaluate_regression()   — evaluates & compares regression models
-└── evaluate_classification()— evaluates & compares classification models
-```
+- 📊 Analyzes **19,667 players** (9 features: rating, potential, age, position, value, etc.)
+- 🧮 **Regression:** predicts `value per m$` (market value)
+- 🏷️ **Classification:** tiers players into `Bronze / Silver / Gold / Elite`
+- 🧠 Builds and stacks multiple ML models, then proves the winning model is **stable**, not just lucky
 
 ---
 
-## ⚙️ 1. Input Pipeline
+## 🧹 Data Prep
 
-`InputPipeline` prepares the raw data before feeding it into the models:
-
-- **`age`** → `log1p` is applied to reduce skewness.
-- **Standard scaling** on a set of numeric columns (`standard_cols`).
-- **One-Hot Encoding** on the `position` column.
-- Builds two separate feature matrices:
-  - `X_reg`: includes `overall_rating` (after its own scaling) + numeric columns + one-hot columns, used for regression models.
-  - `X_cls`: the same columns but without `overall_rating`, used for classification models.
-
-It also includes `_classify_rating()`: a function that converts the numeric `overall_rating` into a tier based on these thresholds:
-
-| Threshold | Tier |
-|---|---|
-| < 65 | `low` |
-| 65 – 74 | `mid` |
-| 75 – 84 | `high` |
-| ≥ 85 | `elite` |
+- ✅ 0 nulls, 0 duplicates
+- 🗑️ Dropped `name`, `country`, `team` — no real effect on value (e.g. Salah is Egyptian but worth 100M+, while avg. Egyptian player is worth 0–5M)
+- ⚖️ Scaled numeric features + encoded `position` (dropped `team` to avoid 10K+ One-Hot columns 💀)
 
 ---
 
-## 📊 2. Regression Models (Market Value Prediction)
+## 🏆 Best Models
 
-Goal: predict a player's market value (in log scale, then converted back to millions of dollars via `expm1`).
-
-Available models (`_reg_models`):
-
-- Polynomial Ridge
-- Ridge
-- Lasso
-- SVR
-- Decision Tree
-- Random Forest
-- KNN Regressor
-- Voting Regressor
-- **Stacking ★** (the flagship model)
-
-### Evaluation metrics (`RegressionStats`)
-- **MAE** (Mean Absolute Error)
-- **MSE** (Mean Squared Error)
-- **RMSE** (Root Mean Squared Error)
-- **R²** (coefficient of determination)
-
-Plus a bar chart comparing R² and RMSE across all models.
-
----
-
-## 🏅 3. Classification Models (Performance Tier Prediction)
-
-Goal: classify a player into one of four tiers: `low` / `mid` / `high` / `elite`.
-
-Available models (`_cls_models`):
-
-- KNN
-- Logistic Regression
-- SVM (Linear / RBF / Poly)
-- Decision Tree (Gini / Entropy)
-- Random Forest
-- XGBoost
-- Voting Classifier
-
-### Evaluation metrics (`ClassificationStats`)
-- **Accuracy**
-- **F1 Score** (weighted)
-- **Classification Report**
-- **Confusion Matrix** (optional, as a heatmap)
-
-Plus a bar chart comparing Accuracy and F1 across all models.
-
----
-
-## 🚀 Usage
-
-### Predicting from already-preprocessed data
-```python
-ufc = UnifiedFootball()
-
-# Predict market value only
-ufc.predict_value(X_reg)
-
-# Predict performance tier only
-ufc.predict_tier(X_cls)
-
-# Unified prediction (value + tier)
-ufc.predict(X_reg, X_cls)
-```
-
-### Predicting from raw data
-```python
-ufc.predict_raw(raw_dataframe)
-```
-
-### Evaluating and comparing models
-```python
-# Compare regression models
-ufc.evaluate_regression(y_test_reg, X_test_all)
-
-# Compare classification models
-ufc.evaluate_classification(y_test, X_test)
-
-# Include confusion matrix for each model
-ufc.evaluate_classification(y_test, X_test, plot_cm=True)
-```
-
----
-
-## 📦 Requirements (Dependencies)
-
-```
-pandas
-numpy
-scikit-learn
-matplotlib
-seaborn
-xgboost
-```
-
-> ⚠️ **Note**: The class assumes several pre-trained variables already exist in scope, such as:
-> `onehot`, `std_scaler`, `rating_scaler`, `ohe_cols`, `standard_cols`,
-> the trained regression and classification models (e.g. `ridge_best`, `rf_best`, `gs_knn`, `voting_clf`, etc.),
-> as well as `poly_best` and `scaler_poly` used by the `Polynomial Ridge` model.
-> These must be trained/loaded **before** creating a `UnifiedFootball` instance.
-
----
-
-## 🧠 Quick Summary
-
-| Method | Input | Output |
+| Task | Winner | Score |
 |---|---|---|
-| `predict_value` | `X_reg` | market value (M$) per model |
-| `predict_tier` | `X_cls` | performance tier (`low/mid/high/elite`) per model |
-| `predict` | `X_reg`, `X_cls` | dict combining value and tier |
-| `predict_raw` | raw data | full prediction after automatic preprocessing |
-| `evaluate_regression` | `y_true`, `X_reg` | comparison table + chart |
-| `evaluate_classification` | `y_true`, `X_cls` | comparison table + chart |
+| 📈 Regression | **Stacking Regressor** | Test R² = **0.9945** |
+| 🏷️ Classification | **XGBoost** | Test Accuracy = **0.9925** |
+
+### 📈 Regression Leaderboard
+| Model | Test R² | RMSE |
+|---|---|---|
+| Ridge / Lasso | 0.828 | 0.311 |
+| SVR | 0.971 | 0.128 |
+| Decision Tree | 0.993 | 0.064 |
+| Random Forest | 0.994 | 0.056 |
+| **Stacking ★** | **0.9945** | **0.056** |
+
+### 🏷️ Classification Leaderboard
+| Model | Accuracy |
+|---|---|
+| Logistic Regression | 0.955 |
+| KNN | 0.965 |
+| SVM (RBF) | 0.985 |
+| Random Forest | 0.989 |
+| **XGBoost 🥇** | **0.9925** |
+| Voting Ensemble | 0.990 |
+
+---
+
+## 🔍 Key Findings
+
+- 🌀 The relationship between features and market value is **non-linear** — Ridge/Lasso underfit (R² ≈ 0.83), tree/kernel models thrive (R² ≈ 0.99+)
+- 🥇 **Classification is easier than regression** here — quartile-based tiers are clean & balanced, while value is skewed with extreme outliers (superstar prices)
+- 🧊 **GaussianNB is scale-invariant** — same accuracy with/without `StandardScaler`, since it works on distributions, not distances
+- 🛡️ **Ridge beats Lasso** — with lots of One-Hot position features, Ridge keeps them all useful instead of zeroing them out
+
+---
+
+## ✅ Stability Proof
+
+Ran K-Fold CV + Coefficient of Variation on the final Stacking model:
+
+> **Mean R² = 0.994 | Std = 0.001 | CV% = 0.18%** → 🟢 **HIGHLY STABLE** (rule: CV% < 5% = stable)
+
+---
+
+## 📌 Conclusion
+
+| Metric | Baseline | Final System |
+|---|---|---|
+| R² | Lower | **~0.99** |
+| RMSE | Higher | **Much lower** |
+| Stability | Not tested | **< 1% CV ✅** |
+
+Ensembling (Stacking/Voting) + solid preprocessing turned a decent baseline into a near-perfect, verified-stable scouting system. ⚽📈
